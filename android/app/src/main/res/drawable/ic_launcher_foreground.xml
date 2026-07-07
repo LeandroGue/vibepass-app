@@ -1,0 +1,14 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- El "Ticket Minimalista" -->
+    <path
+        android:fillColor="#FDF9EE"
+        android:pathData="M30,35 L78,35 Q82,35 82,39 L82,48 Q76,54 82,60 L82,69 Q82,73 78,73 L30,73 Q26,73 26,69 L26,60 Q32,54 26,48 L26,39 Q26,35 30,35 Z" />
+    <!-- La V estilizada -->
+    <path
+        android:fillColor="#97472A"
+        android:pathData="M44,48 L54,62 L64,48 L60,48 L54,56 L48,48 Z" />
+</vector>

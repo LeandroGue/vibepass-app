@@ -1,0 +1,23 @@
+# --- Web App ---
+node_modules/
+*.log
+.DS_Store
+Thumbs.db
+
+# --- Temp / Dev artifacts ---
+scratch/
+tmp_extracted_js.js
+*.v2
+*.bak
+
+# --- IDE ---
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# --- Capacitor / Android (subtree handles its own) ---
+# android/ already has its own .gitignore
+
+# --- Capacitor build output ---
+www/

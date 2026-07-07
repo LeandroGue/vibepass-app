@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html class="light" lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+    <meta name="theme-color" content="#97472a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Pase Familiar - Módulo Explorar</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icon.png" type="image/png">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        background: "#fdf9ee", // Crema cálido
+                        surface: "#fdf9ee",
+                        "surface-container-low": "#f7f3e8",
+                        "surface-container": "#f1eee3",
+                        "surface-container-high": "#ece8dd",
+                        "surface-container-highest": "#e6e2d8",
+                        "surface-container-lowest": "#ffffff",
+                        primary: "#97472a", // Terracota cálido
+                        "primary-container": "#ff9a76",
+                        "primary-fixed": "#ffdbcf",
+                        secondary: "#4c644b", // Verde salvia
+                        "secondary-container": "#ceeaca",
+                        "secondary-fixed-dim": "#b3ceaf",
+                        tertiary: "#356574", // Azul apagado
+                        "tertiary-container": "#8cbbcd",
+                        "on-surface": "#1c1c15", // Carbón cálido
+                        "on-surface-variant": "#55433d",
+                        outline: "#88726c",
+                        "outline-variant": "#dbc1b9",
+                        error: "#ba1a1a",
+                        "error-container": "#ffdad6"
+                    },
+                    fontFamily: {
+                        headline: ["Plus Jakarta Sans", "sans-serif"],
+                        body: ["Plus Jakarta Sans", "sans-serif"],
+                        caps: ["Plus Jakarta Sans", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts & Material Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+
+    <!-- External Utilities -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.4.4/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+    <!-- Custom CSS Estilos -->
+    <link rel="stylesheet" href="css/styles.css?v=2">
+</head>
+<body class="antialiased selection:bg-primary-container selection:text-black">
+
+    <!-- Global App Header -->
+    <header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-surface shadow-[0_4px_24px_0_rgba(151,71,42,0.08)]">
+        <div class="flex items-center gap-2 text-primary">
+            <span class="material-symbols-outlined text-[26px]">confirmation_number</span>
+            <span class="font-headline text-lg font-black tracking-tight">PASE FAMILIAR</span>
+        </div>
+        <button onclick="window.location.href='coleccion.html'" class="text-on-surface-variant hover:text-on-surface p-1 transition-colors">
+            <span class="material-symbols-outlined text-[26px]">style</span>
+        </button>
+    </header>
+
+    <div class="pt-20 pb-[100px] px-6 max-w-[600px] mx-auto flex flex-col gap-6">
+
+        <!-- ================= PANTALLA: INICIO / TRENDING ================= -->
+        <div id="screen-home" class="screen active flex flex-col gap-6">
+            <!-- Bienvenida -->
+            <div class="flex flex-col gap-1 mt-2">
+                <h2 class="font-headline text-xl font-bold text-on-surface">Explorar Tendencias</h2>
+                <p class="text-sm text-on-surface-variant">Descubre los pases más populares para disfrutar y bromear en casa.</p>
+            </div>
+
+            <!-- Buscador -->
+            <div class="relative">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+                <input id="searchInput" oninput="filterPasses()" type="text" placeholder="Buscar pases divertidos..." class="w-full bg-surface-container-low border border-outline-variant/50 rounded-2xl py-3 pl-11 pr-4 text-on-surface placeholder-on-surface-variant focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm font-semibold" />
+            </div>
+
+            <!-- Categorías / Vibes -->
+            <div>
+                <h2 class="font-headline text-sm font-bold text-on-surface mb-3 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary text-lg">palette</span>
+                    Elige tu Vibe
+                </h2>
+                <div class="flex flex-wrap gap-2" id="vibeFilters">
+                    <!-- Se inyecta dinámicamente -->
+                </div>
+            </div>
+
+            <!-- Listado de Pases -->
+            <div class="flex flex-col gap-4">
+                <div class="grid grid-cols-1 gap-4" id="passesFeed">
+                    <!-- Tarjetas de pases se inyectan dinámicamente -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= PANTALLA: STUDIO / EDITOR ================= -->
+        <div id="screen-generator" class="screen flex flex-col gap-6">
+            <div class="flex items-center gap-3">
+                <button onclick="goBack()" class="flex items-center justify-center w-10 h-10 rounded-full bg-surface border border-outline-variant/50 text-on-surface active:scale-95 transition-transform shadow-sm">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </button>
+                <h2 class="font-headline text-lg font-bold text-on-surface">Personalizar Pase</h2>
+            </div>
+
+            <!-- Previsualización Interactiva del Pase -->
+            <div class="flex justify-center py-2 relative">
+                <!-- Tarjeta VIP interactiva -->
+                <div id="interactiveCard" class="w-full max-w-[320px] rounded-2xl border-2 border-outline-variant bg-surface-container-lowest flex flex-col overflow-hidden shadow-xl relative transition-all duration-300">
+                    <!-- Cabecera del ticket interactivo -->
+                    <div id="editorCardHeader" class="bg-primary-container p-4 flex justify-between items-center transition-colors duration-300 border-b-2 border-outline-variant/30 ticket-cutout pb-8">
+                        <span id="editorCardHeaderLabel" class="font-headline text-sm font-black tracking-widest uppercase text-on-primary-container">COLECCIÓN DE FAVORES</span>
+                        <span class="material-symbols-outlined text-on-primary-container text-[28px]">verified</span>
+                    </div>
+
+                    <!-- Cuerpo -->
+                    <div class="p-6 bg-surface-container-low flex flex-col gap-4 relative min-h-[220px]">
+                        <div class="perforated-line"></div>
+                        <!-- Capa de Stickers Emojis -->
+                        <div id="cardStickersContainer" class="absolute inset-0 pointer-events-none z-20 overflow-hidden">
+                            <!-- Los stickers se agregan aquí como elementos absolutos -->
+                        </div>
+
+                        <!-- Foto / Icono del Titular -->
+                        <div id="avatarContainer" class="w-16 h-16 rounded-full bg-surface-container mx-auto border-2 border-outline-variant overflow-hidden flex items-center justify-center relative z-10">
+                            <span class="material-symbols-outlined text-[36px] text-on-surface-variant" id="avatarIcon">face</span>
+                        </div>
+
+                        <div class="text-center z-10 space-y-1">
+                            <p class="font-caps text-[8px] text-primary tracking-[0.2em] font-bold uppercase" id="passBadgeLabel">PASE ESPECIAL</p>
+                            <h3 id="previewPassTitle" class="font-headline text-md font-bold text-on-surface leading-tight px-2 uppercase">Nombre del Pase</h3>
+                        </div>
+
+                        <!-- Detalles rápidos -->
+                        <div class="grid grid-cols-2 gap-2 mt-1 z-10">
+                            <div class="bg-surface-container-lowest p-2.5 rounded-xl border border-outline-variant/30">
+                                <span class="font-caps text-[8px] text-on-surface-variant block uppercase font-bold tracking-wider mb-0.5">FECHA</span>
+                                <span class="text-xs text-on-surface font-bold" id="previewExpiryText">CUALQUIER DÍA</span>
+                            </div>
+                            <div class="bg-surface-container-lowest p-2.5 rounded-xl border border-outline-variant/30">
+                                <span class="font-caps text-[8px] text-on-surface-variant block uppercase font-bold tracking-wider mb-0.5">VIBE</span>
+                                <span class="text-xs text-on-surface font-bold" id="previewVibeText">FAMILIAR</span>
+                            </div>
+                        </div>
+
+                        <!-- Código QR ficticio temporal -->
+                        <div class="bg-white p-2 rounded-xl flex justify-center items-center mt-2 z-10 w-20 h-20 mx-auto border border-outline-variant/30">
+                            <span class="material-symbols-outlined text-outline-variant text-[44px]">qr_code_2</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel de Controles Bento -->
+            <div class="bg-surface-container rounded-2xl p-5 flex flex-col gap-4 border border-outline-variant/30">
+                <!-- Pestañas de control -->
+                <div class="flex border-b border-outline-variant/30 pb-2 gap-2">
+                    <button id="tabBtnText" onclick="switchEditorTab('text')" class="flex-1 pb-2 font-caps text-xs font-bold text-primary border-b-2 border-primary text-center transition-colors">TEXTO</button>
+                    <button id="tabBtnColor" onclick="switchEditorTab('color')" class="flex-1 pb-2 font-caps text-xs font-bold text-on-surface-variant hover:text-on-surface text-center transition-colors">COLOR</button>
+                    <button id="tabBtnStickers" onclick="switchEditorTab('stickers')" class="flex-1 pb-2 font-caps text-xs font-bold text-on-surface-variant hover:text-on-surface text-center transition-colors">STICKERS</button>
+                </div>
+
+                <!-- Contenido Pestaña: Texto -->
+                <div id="editorTabText" class="flex flex-col gap-4">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="font-caps text-[9px] text-on-surface-variant font-bold tracking-widest">PARA</label>
+                        <input id="inputName" type="text" placeholder="Ej. Mamá, Papá o tu Amigo..." maxlength="25" class="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-xl py-3 px-4 text-on-surface placeholder-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors text-sm font-semibold" />
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="font-caps text-[9px] text-on-surface-variant font-bold tracking-widest">DE (OPCIONAL)</label>
+                        <input id="inputSender" type="text" placeholder="Tu nombre..." maxlength="25" class="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-xl py-3 px-4 text-on-surface placeholder-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors text-sm font-semibold" />
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="font-caps text-[9px] text-on-surface-variant font-bold tracking-widest">DETALLES O ACLARACIÓN (OPCIONAL)</label>
+                        <textarea id="inputMessage" placeholder="Ej. Incluye café, tostadas y mucho cariño..." maxlength="80" rows="2" class="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-xl py-3 px-4 text-on-surface placeholder-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors text-sm resize-none font-semibold"></textarea>
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="font-caps text-[9px] text-on-surface-variant font-bold tracking-widest">VENCIMIENTO (OPCIONAL)</label>
+                        <input id="inputExpiry" type="date" oninput="updatePreviewExpiry()" class="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-xl py-3 px-4 text-on-surface placeholder-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors text-sm font-semibold" />
+                    </div>
+                </div>
+
+                <!-- Contenido Pestaña: Color (Themes) -->
+                <div id="editorTabColor" class="hidden flex-col gap-3">
+                    <label class="font-caps text-[10px] text-on-surface-variant font-bold tracking-widest">ESQUEMA DE COLOR</label>
+                    <div class="grid grid-cols-4 gap-3">
+                        <button onclick="selectNeonTheme('orange')" class="h-12 rounded-xl bg-[#ff9a76] border-2 border-white ring-2 ring-[#ff9a76]/50 flex items-center justify-center text-[#380c00] font-bold text-xs shadow-sm active:scale-95 transition-transform">CÁLIDO</button>
+                        <button onclick="selectNeonTheme('green')" class="h-12 rounded-xl bg-[#ceeaca] border border-outline-variant/50 flex items-center justify-center text-[#0a200c] font-bold text-xs hover:border-primary active:scale-95 transition-transform">VERDE</button>
+                        <button onclick="selectNeonTheme('blue')" class="h-12 rounded-xl bg-[#8cbbcd] border border-outline-variant/50 flex items-center justify-center text-[#001f28] font-bold text-xs hover:border-primary active:scale-95 transition-transform">AZUL</button>
+                        <button onclick="selectNeonTheme('gold')" class="h-12 rounded-xl bg-[#ffdbcf] border border-outline-variant/50 flex items-center justify-center text-[#783115] font-bold text-xs hover:border-primary active:scale-95 transition-transform">ORO</button>
+                    </div>
+                </div>
+
+                <!-- Contenido Pestaña: Stickers -->
+                <div id="editorTabStickers" class="hidden flex-col gap-3">
+                    <label class="font-caps text-[10px] text-on-surface-variant font-bold tracking-widest">TAP PARA DECORAR CON EMOJIS</label>
+                    <div class="grid grid-cols-6 gap-2">
+                        <button onclick="toggleSticker('👵')" class="aspect-square bg-surface-container-lowest hover:bg-surface-container-high rounded-xl flex items-center justify-center text-2xl border border-outline-variant/20 active:scale-90 transition-transform">👵</button>
+                        <button onclick="toggleSticker('🍕')" class="aspect-square bg-surface-container-lowest hover:bg-surface-container-high rounded-xl flex items-center justify-center text-2xl border border-outline-variant/20 active:scale-90 transition-transform">🍕</button>
+                        <button onclick="toggleSticker('🔥')" class="aspect-square bg-surface-container-lowest hover:bg-surface-container-high rounded-xl flex items-center justify-center text-2xl border border-outline-variant/20 active:scale-90 transition-transform">🔥</button>
+                        <button onclick="toggleSticker('👑')" class="aspect-square bg-surface-container-lowest hover:bg-surface-container-high rounded-xl flex items-center justify-center text-2xl border border-outline-variant/20 active:scale-90 transition-transform">👑</button>
+                        <button onclick="toggleSticker('💩')" class="aspect-square bg-surface-container-lowest hover:bg-surface-container-high rounded-xl flex items-center justify-center text-2xl border border-outline-variant/20 active:scale-90 transition-transform">💩</button>
+                        <button onclick="toggleSticker('❤️')" class="aspect-square bg-surface-container-lowest hover:bg-surface-container-high rounded-xl flex items-center justify-center text-2xl border border-outline-variant/20 active:scale-90 transition-transform">❤️</button>
+                        <button onclick="toggleSticker('🛏️')" class="aspect-square bg-surface-container-lowest hover:bg-surface-container-high rounded-xl flex items-center justify-center text-2xl border border-outline-variant/20 active:scale-90 transition-transform">🛏️</button>
+                        <button onclick="toggleSticker('🛋️')" class="aspect-square bg-surface-container-lowest hover:bg-surface-container-high rounded-xl flex items-center justify-center text-2xl border border-outline-variant/20 active:scale-90 transition-transform">🛋️</button>
+                        <button onclick="toggleSticker('☕')" class="aspect-square bg-surface-container-lowest hover:bg-surface-container-high rounded-xl flex items-center justify-center text-2xl border border-outline-variant/20 active:scale-90 transition-transform">☕</button>
+                        <button onclick="toggleSticker('🥞')" class="aspect-square bg-surface-container-lowest hover:bg-surface-container-high rounded-xl flex items-center justify-center text-2xl border border-outline-variant/20 active:scale-90 transition-transform">🥞</button>
+                        <button onclick="toggleSticker('🥳')" class="aspect-square bg-surface-container-lowest hover:bg-surface-container-high rounded-xl flex items-center justify-center text-2xl border border-outline-variant/20 active:scale-90 transition-transform">🥳</button>
+                        <button onclick="clearStickers()" class="aspect-square bg-red-50/10 hover:bg-red-50/20 text-red-700 rounded-xl flex items-center justify-center active:scale-90 transition-transform border border-red-200"><span class="material-symbols-outlined text-lg">delete_sweep</span></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botón Generar -->
+            <button onclick="generatePass()" class="w-full bg-primary text-on-primary font-headline font-bold text-sm uppercase py-4 rounded-full shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                <span>Generar Pase Familiar</span>
+                <span class="material-symbols-outlined text-lg">bolt</span>
+            </button>
+        </div>
+
+        <!-- ================= PANTALLA: RESULTADO / EMITIDO ================= -->
+        <div id="screen-result" class="screen flex flex-col gap-6">
+            <div class="flex items-center gap-3">
+                <button onclick="showScreen('home')" class="flex items-center justify-center w-10 h-10 rounded-full bg-surface border border-outline-variant/50 text-on-surface active:scale-95 transition-transform shadow-sm">
+                    <span class="material-symbols-outlined">home</span>
+                </button>
+                <h2 class="font-headline text-lg font-bold text-on-surface">¡Pase Confirmado! 🎉</h2>
+            </div>
+
+            <!-- Contenedor del Render Oficial del Pase -->
+            <div class="flex justify-center w-full" id="passPreview">
+                <!-- Se dibuja el pase completo de forma dinámica aquí -->
+            </div>
+
+            <!-- Botones de Acción Bento -->
+            <div class="flex flex-col gap-4">
+                <button onclick="window.location.href='coleccion.html'" class="w-full bg-primary text-on-primary font-headline font-bold text-sm py-4 rounded-full uppercase tracking-wider shadow-md hover:scale-[0.98] active:scale-95 transition-all flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined">style</span>
+                    Ver mi Colección
+                </button>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="sharePass()" class="bg-surface-container border border-outline-variant text-on-surface py-3.5 px-3 rounded-full flex flex-col items-center justify-center gap-1.5 active:scale-95 transition-transform shadow-sm">
+                        <span class="material-symbols-outlined text-secondary text-2xl">share</span>
+                        <span class="font-caps text-[10px] tracking-wider font-bold">WHATSAPP / REDES</span>
+                    </button>
+                    <button onclick="downloadPass()" class="bg-surface-container border border-outline-variant text-on-surface py-3.5 px-3 rounded-full flex flex-col items-center justify-center gap-1.5 active:scale-95 transition-transform shadow-sm">
+                        <span class="material-symbols-outlined text-tertiary text-2xl">download</span>
+                        <span class="font-caps text-[10px] tracking-wider font-bold">DESCARGAR PNG</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Menú de Navegación Inferior Móvil -->
+    <nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-surface-container-low/95 backdrop-blur-2xl border-t-2 border-outline-variant/30 shadow-lg rounded-t-2xl">
+        <button id="navBtn-home" onclick="window.location.href='index.html'" class="flex flex-col items-center justify-center text-primary bg-primary-container/20 rounded-full px-4 py-1.5 translate-y-[-2px] transition-transform">
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">explore</span>
+            <span class="font-caps text-[10px] font-bold mt-0.5">Explorar</span>
+        </button>
+        <button id="navBtn-roulette" onclick="window.location.href='ruleta.html'" class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary p-2 transition-all">
+            <span class="material-symbols-outlined">casino</span>
+            <span class="font-caps text-[10px] font-bold mt-0.5">Ruleta</span>
+        </button>
+        <button id="navBtn-saved" onclick="window.location.href='coleccion.html'" class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary p-2 transition-all">
+            <span class="material-symbols-outlined">style</span>
+            <span class="font-caps text-[10px] font-bold mt-0.5">Colección</span>
+        </button>
+    </nav>
+
+    <!-- Sistema Global Toast -->
+    <div id="toast" class="toast fixed bottom-24 left-1/2 -translate-x-1/2 bg-surface-container-high border border-outline-variant text-on-surface py-3 px-6 rounded-full font-caps text-xs font-bold z-[2000] shadow-md transition-all duration-300 opacity-0 pointer-events-none"></div>
+
+    <!-- Scripts de la Aplicación Modulada -->
+    <script src="js/passes.js?v=2"></script>
+    <script src="js/editor.js?v=2"></script>
+    <script src="js/app.js?v=2"></script>
+</body>
+</html>

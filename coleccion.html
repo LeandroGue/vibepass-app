@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html class="light" lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+    <meta name="theme-color" content="#97472a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Pase Familiar - Módulo Colección</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icon.png" type="image/png">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        background: "#fdf9ee", // Crema cálido
+                        surface: "#fdf9ee",
+                        "surface-container-low": "#f7f3e8",
+                        "surface-container": "#f1eee3",
+                        "surface-container-high": "#ece8dd",
+                        "surface-container-highest": "#e6e2d8",
+                        "surface-container-lowest": "#ffffff",
+                        primary: "#97472a", // Terracota cálido
+                        "primary-container": "#ff9a76",
+                        "primary-fixed": "#ffdbcf",
+                        secondary: "#4c644b", // Verde salvia
+                        "secondary-container": "#ceeaca",
+                        "secondary-fixed-dim": "#b3ceaf",
+                        tertiary: "#356574", // Azul apagado
+                        "tertiary-container": "#8cbbcd",
+                        "on-surface": "#1c1c15", // Carbón cálido
+                        "on-surface-variant": "#55433d",
+                        outline: "#88726c",
+                        "outline-variant": "#dbc1b9",
+                        error: "#ba1a1a",
+                        "error-container": "#ffdad6"
+                    },
+                    fontFamily: {
+                        headline: ["Plus Jakarta Sans", "sans-serif"],
+                        body: ["Plus Jakarta Sans", "sans-serif"],
+                        caps: ["Plus Jakarta Sans", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts & Material Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+
+    <!-- External Utilities -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.4.4/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+    <!-- Custom CSS Estilos -->
+    <link rel="stylesheet" href="css/styles.css?v=2">
+</head>
+<body class="antialiased selection:bg-primary-container selection:text-black">
+
+    <!-- Global App Header -->
+    <header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-surface shadow-[0_4px_24px_0_rgba(151,71,42,0.08)]">
+        <div class="flex items-center gap-2 text-primary">
+            <span class="material-symbols-outlined text-[26px]">confirmation_number</span>
+            <span class="font-headline text-lg font-black tracking-tight">PASE FAMILIAR</span>
+        </div>
+        <button onclick="window.location.href='coleccion.html'" class="text-on-surface hover:text-on-surface p-1 transition-colors">
+            <span class="material-symbols-outlined text-[26px]" style="font-variation-settings: 'FILL' 1;">style</span>
+        </button>
+    </header>
+
+    <div class="pt-20 pb-[100px] px-6 max-w-[600px] mx-auto flex flex-col gap-6">
+
+        <!-- ================= PANTALLA: GUARDADOS ================= -->
+        <div id="screen-saved" class="screen active flex flex-col gap-6">
+            <div class="flex flex-col gap-1 mt-2">
+                <h2 class="font-headline text-2xl font-black text-primary">💾 MI COLECCIÓN</h2>
+                <p class="text-sm text-on-surface-variant">Tus pases emitidos y favores especiales guardados en tu historial.</p>
+            </div>
+
+            <!-- Filtros Biblioteca -->
+            <div class="flex flex-wrap gap-2">
+                <button class="bg-[#ffdbcf] text-[#783115] font-caps text-[10px] font-bold px-4 py-2 rounded-full whitespace-nowrap">TODOS LOS PASES</button>
+            </div>
+
+            <!-- Listado de Pases Guardados -->
+            <div class="flex flex-col gap-3" id="savedContainer">
+                <!-- Se inyecta dinámicamente -->
+            </div>
+        </div>
+
+        <!-- ================= PANTALLA: RESULTADO / EMITIDO ================= -->
+        <div id="screen-result" class="screen flex flex-col gap-6">
+            <div class="flex items-center gap-3">
+                <button onclick="showScreen('saved')" class="flex items-center justify-center w-10 h-10 rounded-full bg-surface border border-outline-variant/50 text-on-surface active:scale-95 transition-transform shadow-sm">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </button>
+                <h2 class="font-headline text-lg font-bold text-on-surface">Detalle del Pase</h2>
+            </div>
+
+            <!-- Contenedor del Render Oficial del Pase -->
+            <div class="flex justify-center w-full" id="passPreview">
+                <!-- Se dibuja el pase completo de forma dinámica aquí -->
+            </div>
+
+            <!-- Botones de Acción Bento -->
+            <div class="flex flex-col gap-4">
+                <button onclick="showScreen('saved')" class="w-full bg-primary text-on-primary font-headline font-bold text-sm py-4 rounded-full uppercase tracking-wider shadow-md hover:scale-[0.98] active:scale-95 transition-all flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                    Volver a Colección
+                </button>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="sharePass()" class="bg-surface-container border border-outline-variant text-on-surface py-3.5 px-3 rounded-full flex flex-col items-center justify-center gap-1.5 active:scale-95 transition-transform shadow-sm">
+                        <span class="material-symbols-outlined text-secondary text-2xl">share</span>
+                        <span class="font-caps text-[10px] tracking-wider font-bold">WHATSAPP / REDES</span>
+                    </button>
+                    <button onclick="downloadPass()" class="bg-surface-container border border-outline-variant text-on-surface py-3.5 px-3 rounded-full flex flex-col items-center justify-center gap-1.5 active:scale-95 transition-transform shadow-sm">
+                        <span class="material-symbols-outlined text-tertiary text-2xl">download</span>
+                        <span class="font-caps text-[10px] tracking-wider font-bold">DESCARGAR PNG</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Menú de Navegación Inferior Móvil -->
+    <nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-surface-container-low/95 backdrop-blur-2xl border-t-2 border-outline-variant/30 shadow-lg rounded-t-2xl">
+        <button id="navBtn-home" onclick="window.location.href='index.html'" class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary p-2 transition-all">
+            <span class="material-symbols-outlined">explore</span>
+            <span class="font-caps text-[10px] font-bold mt-0.5">Explorar</span>
+        </button>
+        <button id="navBtn-roulette" onclick="window.location.href='ruleta.html'" class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary p-2 transition-all">
+            <span class="material-symbols-outlined">casino</span>
+            <span class="font-caps text-[10px] font-bold mt-0.5">Ruleta</span>
+        </button>
+        <button id="navBtn-saved" onclick="window.location.href='coleccion.html'" class="flex flex-col items-center justify-center text-primary bg-primary-container/20 rounded-full px-4 py-1.5 translate-y-[-2px] transition-transform">
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">style</span>
+            <span class="font-caps text-[10px] font-bold mt-0.5">Colección</span>
+        </button>
+    </nav>
+
+    <!-- Sistema Global Toast -->
+    <div id="toast" class="toast fixed bottom-24 left-1/2 -translate-x-1/2 bg-surface-container-high border border-outline-variant text-on-surface py-3 px-6 rounded-full font-caps text-xs font-bold z-[2000] shadow-md transition-all duration-300 opacity-0 pointer-events-none"></div>
+
+    <!-- Scripts de la Aplicación Modulada -->
+    <script src="js/passes.js?v=2"></script>
+    <script src="js/editor.js?v=2"></script>
+    <script src="js/app.js?v=2"></script>
+</body>
+</html>
