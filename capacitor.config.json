@@ -1,5 +1,5 @@
 {
   "appId": "com.vibepass.app",
   "appName": "VibePass",
-  "webDir": "www"
+  "webDir": "."
 }
