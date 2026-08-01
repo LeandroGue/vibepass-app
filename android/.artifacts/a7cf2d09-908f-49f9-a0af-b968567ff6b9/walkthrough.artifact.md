@@ -1,29 +1,25 @@
-# Inspección Técnica de Cámara y Estabilidad v1.8.4.1
+# Resumen de Correcciones Técnicas para Play Store v1.9.2
 
-He realizado una revisión exhaustiva ("con lupa") de todo el sistema nativo para garantizar que la cámara y el inicio de la app sean 100% estables antes del lanzamiento masivo.
+He finalizado las optimizaciones necesarias para eliminar las advertencias de Google Play Console y asegurar que la aplicación cumpla con los estándares de calidad y monetización de 2026.
 
-## Mejoras de Cámara y Sistema
+## 🛠️ Detalle de lo Realizado
 
-### [Lógica del Escáner]
-- **Revisión Rigurosa**: Se reforzó la función `startScanning` para que verifique cada paso del proceso:
-    1. Existencia del Plugin en Android.
-    2. Disponibilidad del motor de Google (ML Kit).
-    3. Estado real de los permisos de hardware.
-- **Feedback al Usuario**: Ahora la app muestra alertas claras si el permiso es denegado o si el motor de escaneo se está descargando en segundo plano.
+### 1. Símbolos de Depuración Nativos
+- **Problema**: Google Play avisaba que el App Bundle no contenía los "símbolos" para analizar fallos técnicos.
+- **Solución**: He activado la instrucción `debugSymbolLevel 'FULL'` en el archivo de construcción de la aplicación. Ahora, cada vez que generes un Bundle (.aab), se creará un archivo complementario que le permite a Google decirte exactamente dónde ocurrió un error si la app se llegara a cerrar.
 
-### [Estabilidad de Inicio]
-- **Blindaje de Diseño**: Se protegió la carga de Tailwind CSS. Si la librería de internet tarda en responder, la app ya no se bloquea ni muestra errores de consola.
-- **Restauración del Puente**: Se aseguró la presencia de `capacitor.js` en todas las pantallas. Sin esto, la comunicación con la cámara era intermitente.
+### 2. Cumplimiento del ID de Publicidad (AD_ID)
+- **Problema**: Había una inconsistencia entre la declaración de anuncios y la detección del permiso.
+- **Solución**: Se ha reforzado la presencia del permiso en el manifiesto y se ha sincronizado con la versión final.
+- **Acción requerida**: Al subir este nuevo archivo, Google Play detectará que el permiso coincide con lo que declaraste en la consola.
 
-### [Sincronización Total]
-- **Limpieza de Caché**: Se realizó una eliminación manual de archivos antiguos en la carpeta de Android antes de copiar el nuevo código.
-- **Confirmación Visual**: La versión se actualizó a **v1.8.4.1** para que puedas confirmar que estás probando el último código con todas las correcciones.
+### 3. Actualización de Versión y Sincronización
+- **Nueva Versión**: La app ha subido a la **v1.9.2 (Code 15)**. Este salto es necesario para que Google Play procese los cambios como una actualización fresca.
+- **Limpieza Visual**: Se actualizaron todos los textos de versión en el pie de página y la pantalla de ayuda para que el usuario sepa que tiene la última versión instalada.
+- **Sincronización Web-Android**: Se ejecutó `npx cap copy` para asegurar que el diseño de los anuncios adaptativos y el menú elevado estén activos en el paquete nativo.
 
-## Verificación Final
+## ✅ Estado Final
+La aplicación está **100% preparada** técnicamente. Ya no deberías ver advertencias amarillas al subir este nuevo paquete, y los anuncios están configurados con tus IDs reales para empezar a generar ingresos.
 
-1. **Permisos**: Al pulsar el botón QR por primera vez, el sistema solicitará el permiso de forma limpia.
-2. **Logs**: No se detectan errores de referencia ni fallos de carga en el dispositivo de prueba.
-3. **Fluidez**: El splash screen ahora transiciona al contenido sin esperas innecesarias.
-
-> [!IMPORTANT]
-> **Versión de Producción**: Esta versión (12 / 1.8.4.1) está optimizada para el SDK 36 y ya puede ser empaquetada como App Bundle final.
+> [!TIP]
+> **Próximo Paso**: Ve a **Build > Generate Signed Bundle / APK...** en Android Studio y genera el archivo final para subirlo a la consola. ¡Mucha suerte!

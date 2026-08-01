@@ -1,5 +1,5 @@
-- [x] Implementar contador de pases en `js/app.js` (Raíz)
-- [x] Implementar lógica de salto para el primer pase y frecuencia 1:3
-- [x] Replicar cambios en `www/js/app.js`
-- [x] Sincronizar cambios nativos (`npx cap copy`)
-- [x] Listo para el despliegue final
+- [ ] Aumentar versión a v1.9.2 (Code 15) en `build.gradle`
+- [ ] Activar generación de símbolos de depuración (`debugSymbolLevel 'FULL'`)
+- [ ] Actualizar etiquetas de versión en archivos HTML
+- [ ] Sincronizar cambios nativos (`npx cap copy`)
+- [ ] Proporcionar resumen detallado para el usuario
