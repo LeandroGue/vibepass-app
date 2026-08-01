@@ -2,6 +2,9 @@ let currentPassTemplate = null;
 let currentNeonTheme = 'orange';
 let currentStickers = [];
 let currentPassData = null;
+let currentCustomTitle = null;
+
+const STICKERS = ['😀','😂','🥰','😎','🤩','🥳','😴','🤗','🎉','🎊','❤️','🔥','✨','🌟','💯','👑','🍕','🎮','🎁','🐶','🌸','🌈'];
 
 // ===== EDITOR DE PASES (STUDIO) =====
 function openEditor(passId) {
@@ -27,10 +30,13 @@ function openEditor(passId) {
 
     // Resetear estados
     currentStickers = [];
+    currentCustomTitle = null;
     currentNeonTheme = currentPassTemplate.gold ? 'gold' : 'orange';
     document.getElementById('inputName').value = '';
     document.getElementById('inputSender').value = '';
     document.getElementById('inputMessage').value = '';
+    const customTitleInput = document.getElementById('inputCustomTitle');
+    if (customTitleInput) customTitleInput.value = '';
     const expiryInput = document.getElementById('inputExpiry');
     if (expiryInput) expiryInput.value = '';
     const expiryPreview = document.getElementById('previewExpiryText');
@@ -44,6 +50,7 @@ function openEditor(passId) {
 
     // Actualizar stickers y estilos
     updateStickersLayer();
+    renderStickerGrid();
     selectNeonTheme(currentNeonTheme);
     switchEditorTab('text');
     showScreen('generator');
@@ -61,6 +68,14 @@ function updatePreviewExpiry() {
     } else {
         preview.textContent = 'CUALQUIER DÍA';
     }
+}
+
+function updateCustomTitlePreview() {
+    const input = document.getElementById('inputCustomTitle');
+    const preview = document.getElementById('previewPassTitle');
+    if (!input || !preview || !currentPassTemplate) return;
+    currentCustomTitle = input.value.trim() || null;
+    preview.textContent = (currentCustomTitle || currentPassTemplate.title).toUpperCase();
 }
 
 function switchEditorTab(tabName) {
@@ -130,6 +145,7 @@ function toggleSticker(emoji) {
         }
     }
     updateStickersLayer();
+    renderStickerGrid();
 }
 
 function clearStickers() {
@@ -163,6 +179,14 @@ function updateStickersLayer() {
         el.className = "text-3xl filter drop-shadow-md z-30 transition-all select-none";
         container.appendChild(el);
     });
+}
+
+function renderStickerGrid() {
+    const grid = document.getElementById('stickerGrid');
+    if (!grid) return;
+    grid.innerHTML = STICKERS.map(emoji => `
+        <button onclick="toggleSticker('${emoji}')" class="aspect-square rounded-xl bg-surface-container-lowest border border-outline-variant/30 flex items-center justify-center text-2xl transition-all active:scale-90 ${currentStickers.includes(emoji) ? 'ring-2 ring-primary bg-primary/10 border-primary' : ''}">${emoji}</button>
+    `).join('');
 }
 
 // ===== GENERAR PASE FINAL =====
@@ -199,6 +223,7 @@ function generatePass() {
 
     currentPassData = {
         ...currentPassTemplate,
+        title: currentCustomTitle || currentPassTemplate.title,
         name: name,
         sender: sender || 'Alguien que te quiere',
         message: message || currentPassTemplate.desc,
@@ -340,7 +365,7 @@ async function renderFinalPassCard(data) {
 
     // Generar QR Code real
     try {
-        const qrPayload = 'https://vibepass.app/validate?id=' + data.ticketNumber;
+        const qrPayload = 'https://leandrogue.github.io/vibepass-app/index.html?id=' + data.ticketNumber;
         await QRCode.toCanvas(window.document.getElementById('finalQrCanvas'), qrPayload, {
             width: 96,
             margin: 0,

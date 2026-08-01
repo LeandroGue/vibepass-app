@@ -23,6 +23,12 @@ header {
     padding-top: calc(5rem + env(safe-area-inset-top, 0px)) !important;
 }
 
+/* Splash Screen fade-out */
+#app-splash.splash-hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
 /* Sello de CANJEADO */
 .used-stamp {
     position: absolute;

@@ -87,12 +87,12 @@ const Onboarding = {
     close() {
         const overlay = document.getElementById('onboarding-overlay');
         if (overlay) {
-            overlay.classList.add('opacity-0', 'scale-95');
+            overlay.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
             setTimeout(() => {
                 overlay.remove();
                 localStorage.setItem('vibe_onboarding_v182_done', 'true');
                 if (typeof showToast === 'function') showToast("✨ ¡Todo listo! A disfrutar.");
-            }, 3000);
+            }, 300);
         }
     }
 };
@@ -103,7 +103,7 @@ function showOnboarding() {
 }
 
 function restartTutorial() {
-    localStorage.removeItem('vibe_onboarding_complete');
+    localStorage.removeItem('vibe_onboarding_v182_done');
     Onboarding.show();
 }
 

@@ -4,7 +4,7 @@ async function initializeAdMob() {
     if (!window.Capacitor || !window.Capacitor.isNativePlatform()) return;
     const { AdMob } = window.Capacitor.Plugins;
     try {
-        await AdMob.initialize({ requestTrackingAuthorization: true });
+        await AdMob.initialize();
         await AdMob.showBanner({
             adId: 'ca-app-pub-5000128967472607/4407713514',
             adSize: 'ADAPTIVE_BANNER',
@@ -74,7 +74,9 @@ function showDebugLogs() {
 }
 
 // --- NAVIGATION ---
-let navigationHistory = ['home'];
+const _pageToScreen = { 'index.html': 'home', 'ruleta.html': 'roulette', 'coleccion.html': 'saved', 'ayuda.html': 'help' };
+const _currentPage = (window.location.pathname.split("/").pop() || 'index.html');
+let navigationHistory = [_pageToScreen[_currentPage] || 'home'];
 
 function showScreen(id, isBack = false) {
     if (typeof playClickSound === 'function') playClickSound();
@@ -83,6 +85,7 @@ function showScreen(id, isBack = false) {
     const target = document.getElementById('screen-' + id);
     if (target) { target.classList.remove('hidden'); target.classList.add('active'); target.style.display = 'flex'; }
     if (id === 'saved') renderSavedList();
+    if (id === 'roulette' && typeof renderRouletteWheel === 'function') renderRouletteWheel();
 }
 
 function goBack() {
@@ -355,6 +358,11 @@ function initializeApp() {
         }
     } else {
         document.body.classList.add('content-ready');
+    }
+
+    // Service Worker solo en web (en Android lo gestiona Capacitor)
+    if ('serviceWorker' in navigator && (!window.Capacitor || !window.Capacitor.isNativePlatform())) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
     }
 }
 
