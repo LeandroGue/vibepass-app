@@ -105,11 +105,11 @@ function renderVibeFilters() {
     container.innerHTML = categories.map(cat => {
         const isActive = activeVibe === cat.id;
         const activeClasses = isActive 
-            ? "bg-primary text-on-primary font-bold shadow-sm" 
+            ? "bg-primary text-white font-bold shadow-sm scale-105"
             : "bg-surface-container-high text-on-surface-variant border-2 border-outline-variant/30 hover:bg-surface-container-highest transition-colors";
         
         return `
-            <button onclick="setVibe('${cat.id}')" class="snap-start shrink-0 px-4 py-2 rounded-full font-label-sm text-label-sm ${activeClasses}">
+            <button onclick="setVibe('${cat.id}')" class="snap-start shrink-0 px-5 py-2.5 rounded-full text-xs transition-all ${activeClasses}">
                 ${cat.name}
             </button>
         `;
@@ -174,7 +174,7 @@ function renderPassesFeed() {
                         <span class="material-symbols-outlined text-[12px]">local_fire_department</span>
                         ${isGold ? 'DORADO' : 'POPULAR'}
                     </span>
-                    <button class="w-8 h-8 bg-primary text-on-primary rounded-full flex items-center justify-center hover:bg-primary/95 transition-colors">
+                    <button class="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary/95 transition-colors">
                         <span class="material-symbols-outlined text-[16px]">add</span>
                     </button>
                 </div>

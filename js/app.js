@@ -1,453 +1,362 @@
-// ===== AUDIO SINTETIZADO PROCEDURAL (Web Audio API) =====
-let audioCtx = null;
+console.log("VibePass: app.js optimizado v1.9.0");
 
-function initAudio() {
-    if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+async function initializeAdMob() {
+    if (!window.Capacitor || !window.Capacitor.isNativePlatform()) return;
+    const { AdMob } = window.Capacitor.Plugins;
+    try {
+        await AdMob.initialize({ requestTrackingAuthorization: true });
+        await AdMob.showBanner({
+            adId: 'ca-app-pub-5000128967472607/4407713514',
+            adSize: 'ADAPTIVE_BANNER',
+            position: 'BOTTOM_CENTER',
+            margin: 0,
+            isTesting: false
+        });
+    } catch (e) { console.error("AdMob Init Error:", e); }
+}
+
+async function showInterstitialAd() {
+    if (!window.Capacitor || !window.Capacitor.isNativePlatform()) return;
+
+    // Control de frecuencia: 1 cada 3 pases, saltando el primero.
+    let count = parseInt(SafeStorage.getItem('interstitial_counter') || '0');
+    count++;
+    SafeStorage.setItem('interstitial_counter', count.toString());
+
+    // Si es el primero, no mostrar. Luego, mostrar cada 3.
+    if (count === 1) {
+        console.log("VibePass: Primer pase, saltando anuncio.");
+        return;
     }
-}
 
-function playClickSound() {
+    if (count % 3 !== 0) {
+        console.log("VibePass: Frecuencia de anuncio no alcanzada (" + count + ")");
+        return;
+    }
+
+    const { AdMob } = window.Capacitor.Plugins;
     try {
-        initAudio();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(320, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.08);
-        
-        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
-        
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.08);
-    } catch (e) { console.warn(e); }
+        console.log("VibePass: Mostrando anuncio intersticial...");
+        await AdMob.prepareInterstitial({
+            adId: 'ca-app-pub-5000128967472607/7642427112',
+            isTesting: false
+        });
+        await AdMob.showInterstitial();
+    } catch (e) { console.error("AdMob Interstitial Error:", e); }
 }
 
-function playSuccessSound() {
-    try {
-        initAudio();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        
-        const now = audioCtx.currentTime;
-        const playNote = (freq, delay, duration) => {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(freq, now + delay);
-            gain.gain.setValueAtTime(0.06, now + delay);
-            gain.gain.exponentialRampToValueAtTime(0.005, now + delay + duration);
-            
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start(now + delay);
-            osc.stop(now + delay + duration);
-        };
-        
-        // Fanfarria feliz
-        playNote(523.25, 0, 0.12);      // C5
-        playNote(659.25, 0.09, 0.12);    // E5
-        playNote(783.99, 0.18, 0.12);    // G5
-        playNote(1046.50, 0.27, 0.35);   // C6
-    } catch (e) { console.warn(e); }
-}
+// --- AUDIO SYSTEM ---
+let audioCtx = null;
+function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+function playClickSound() { try { initAudio(); if (audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(320, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.08); gain.gain.setValueAtTime(0.08, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.08); } catch (e) {} }
+function playSuccessSound() { try { initAudio(); if (audioCtx.state === 'suspended') audioCtx.resume(); const now = audioCtx.currentTime; const p = (f, d, du) => { const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type = 'triangle'; o.frequency.setValueAtTime(f, now + d); g.gain.setValueAtTime(0.06, now + d); g.gain.exponentialRampToValueAtTime(0.005, now + d + du); o.connect(g); g.connect(audioCtx.destination); o.start(now + d); o.stop(now + d + du); }; p(523.25, 0, 0.12); p(659.25, 0.09, 0.12); p(783.99, 0.18, 0.12); p(1046.50, 0.27, 0.35); } catch (e) {} }
 
-// ===== UTILIDADES =====
-function escapeHtml(str) {
-    if (!str) return '';
-    const div = document.createElement('div');
-    div.appendChild(document.createTextNode(str));
-    return div.innerHTML;
-}
+// --- UTILS ---
+function escapeHtml(str) { if (!str) return ''; const div = document.createElement('div'); div.appendChild(document.createTextNode(str)); return div.innerHTML; }
 
-// Safe Storage Helper to handle browsers blocking localStorage
 const SafeStorage = {
-    getItem(key) {
-        try {
-            return localStorage.getItem(key);
-        } catch (e) {
-            console.warn("localStorage.getItem blocked:", e);
-            return this.fallbackStore[key] || null;
-        }
-    },
-    setItem(key, value) {
-        try {
-            localStorage.setItem(key, value);
-        } catch (e) {
-            console.warn("localStorage.setItem blocked:", e);
-            this.fallbackStore[key] = value;
-        }
-    },
-    fallbackStore: {}
+    getItem(key) { try { return localStorage.getItem(key); } catch (e) { return null; } },
+    setItem(key, val) { try { localStorage.setItem(key, val); } catch (e) {} }
 };
 
-// ===== VARIABLES DE ESTADO LOCAL =====
+function logError(context, err) {
+    console.error(`[VibePass Error] ${context}:`, err);
+    let logs = JSON.parse(SafeStorage.getItem('app_logs') || '[]');
+    logs.push({ t: new Date().toISOString(), c: context, m: err.message || err.toString() });
+    if (logs.length > 10) logs.shift();
+    SafeStorage.setItem('app_logs', JSON.stringify(logs));
+}
+
+function showDebugLogs() {
+    const logs = JSON.parse(SafeStorage.getItem('app_logs') || '[]');
+    if (logs.length === 0) { alert("App OK: No hay errores."); return; }
+    alert("LOGS:\n" + logs.map(l => `[${l.c}] ${l.m}`).join('\n'));
+}
+
+// --- NAVIGATION ---
 let navigationHistory = ['home'];
 
-// ===== NAVEGACIÓN Y TOASTS =====
-function showScreen(screenId, isBack = false) {
-    playClickSound();
-    if (!isBack && navigationHistory[navigationHistory.length - 1] !== screenId) {
-        navigationHistory.push(screenId);
-    }
-
-    // Ocultar pantallas
-    document.querySelectorAll('.screen').forEach(s => {
-        s.classList.remove('active');
-        s.style.display = 'none';
-    });
-    const targetScreen = document.getElementById('screen-' + screenId);
-    if (targetScreen) {
-        targetScreen.classList.add('active');
-        targetScreen.style.display = 'flex';
-    }
-
-    if (screenId === 'saved') renderSavedList();
+function showScreen(id, isBack = false) {
+    if (typeof playClickSound === 'function') playClickSound();
+    if (!isBack && navigationHistory[navigationHistory.length - 1] !== id) navigationHistory.push(id);
+    document.querySelectorAll('.screen').forEach(s => { s.classList.add('hidden'); s.classList.remove('active'); s.style.display = 'none'; });
+    const target = document.getElementById('screen-' + id);
+    if (target) { target.classList.remove('hidden'); target.classList.add('active'); target.style.display = 'flex'; }
+    if (id === 'saved') renderSavedList();
 }
 
 function goBack() {
-    if (navigationHistory.length > 1) {
-        navigationHistory.pop();
-        const previous = navigationHistory[navigationHistory.length - 1];
-        showScreen(previous, true);
-    } else {
-        const path = window.location.pathname;
-        const page = path.split("/").pop();
-        if (page === 'ruleta.html') {
-            showScreen('roulette', true);
-        } else if (page === 'coleccion.html') {
-            showScreen('saved', true);
-        } else {
-            showScreen('home', true);
-        }
-    }
+    if (navigationHistory.length > 1) { navigationHistory.pop(); showScreen(navigationHistory[navigationHistory.length - 1], true); }
+    else { window.location.href = 'index.html'; }
 }
 
-function showToast(message) {
-    const toast = document.getElementById('toast');
-    if (!toast) return;
-    toast.textContent = message;
-    toast.className = toast.className.replace('opacity-0 pointer-events-none', 'opacity-100 pointer-events-auto');
-    setTimeout(() => {
-        toast.className = toast.className.replace('opacity-100 pointer-events-auto', 'opacity-0 pointer-events-none');
-    }, 3000);
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = msg; t.style.opacity = '1'; t.style.pointerEvents = 'auto';
+    setTimeout(() => { t.style.opacity = '0'; t.style.pointerEvents = 'none'; }, 3000);
 }
 
 function highlightNav() {
-    const path = window.location.pathname;
-    let page = path.split("/").pop() || 'index.html';
-    
-    // Si la ruta termina en / vacía, asume index.html
-    if (page === '') page = 'index.html';
-    
-    let activeId = 'navBtn-home';
-    if (page === 'ruleta.html') activeId = 'navBtn-roulette';
-    else if (page === 'coleccion.html') activeId = 'navBtn-saved';
-    
-    document.querySelectorAll('nav button').forEach(btn => {
-        btn.className = "flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90 transition-transform duration-150";
-        const icon = btn.querySelector('.material-symbols-outlined');
-        if (icon) icon.style.fontVariationSettings = "'FILL' 0";
+    const p = window.location.pathname.split("/").pop() || 'index.html';
+    const mapping = { 'index.html': 'navBtn-home', 'ruleta.html': 'navBtn-roulette', 'coleccion.html': 'navBtn-saved', 'ayuda.html': 'navBtn-help' };
+    const actId = mapping[p] || 'navBtn-home';
+    document.querySelectorAll('nav button').forEach(b => {
+        b.className = "flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90";
+        const i = b.querySelector('.material-symbols-outlined'); if (i) i.style.fontVariationSettings = "'FILL' 0";
     });
-    
-    const activeBtn = document.getElementById(activeId);
-    if (activeBtn) {
-        activeBtn.className = "flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1.5 translate-y-[-2px] transition-transform";
-        const icon = activeBtn.querySelector('.material-symbols-outlined');
-        if (icon) icon.style.fontVariationSettings = "'FILL' 1";
+    const ab = document.getElementById(actId);
+    if (ab) {
+        ab.className = "flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1.5 translate-y-[-2px]";
+        const i = ab.querySelector('.material-symbols-outlined'); if (i) i.style.fontVariationSettings = "'FILL' 1";
     }
 }
 
-// ===== ACCIONES: GUARDAR, COMPARTIR, DESCARGAR =====
-function savePass(showNotification = true) {
-    if (!currentPassData) return;
-
-    let saved = JSON.parse(SafeStorage.getItem('savedPasses') || '[]');
-    
-    // Evitar duplicados
-    const exists = saved.some(p => p.ticketNumber === currentPassData.ticketNumber);
-    if (exists) {
-        if (showNotification) showToast('ℹ️ Este pase ya está en tu Colección');
+// --- SCANNER SYSTEM ---
+async function startScanning() {
+    if (!window.Capacitor || !window.Capacitor.isNativePlatform()) {
+        showToast("⚠️ Escáner solo disponible en el móvil");
         return;
     }
 
-    const entry = {
-        ...currentPassData,
-        savedAt: new Date().toISOString(),
-        localId: Date.now()
-    };
-    saved.unshift(entry);
-    SafeStorage.setItem('savedPasses', JSON.stringify(saved));
-    
-    if (showNotification) {
-        showToast('💾 ¡Pase guardado en tu Colección!');
+    try {
+        const { BarcodeScanner } = window.Capacitor.Plugins;
+
+        // 1. Verificar si el motor de Google está listo (necesario en versión Play Store)
+        const moduleStatus = await BarcodeScanner.isGoogleBarcodeScannerModuleAvailable();
+        if (!moduleStatus.available) {
+            showToast("⏳ Preparando motor de escaneo...");
+            await BarcodeScanner.installGoogleBarcodeScannerModule();
+            // Esperar un poco a que se instale
+            showToast("✅ Motor listo. Pulsa de nuevo.");
+            return;
+        }
+
+        // 2. Verificar permisos de cámara
+        const status = await BarcodeScanner.checkPermissions();
+        if (status.camera !== 'granted') {
+            const request = await BarcodeScanner.requestPermissions();
+            if (request.camera !== 'granted') {
+                showToast("🚫 Necesitamos permiso de cámara para escanear");
+                return;
+            }
+        }
+
+        // 3. Iniciar escaneo
+        showToast("📷 Escaneando código QR...");
+        const result = await BarcodeScanner.scan();
+
+        if (result.barcodes.length > 0) {
+            const code = result.barcodes[0].displayValue;
+            handleScannedCode(code);
+        }
+    } catch (e) {
+        logError('scanner', e);
+        showToast("❌ Error al abrir cámara");
     }
+}
+
+function handleScannedCode(url) {
+    console.log("VibePass: Procesando código:", url);
+    try {
+        const urlObj = new URL(url);
+        const ticketId = urlObj.searchParams.get('id');
+
+        if (!ticketId) {
+            showToast("🚫 Código no reconocido");
+            return;
+        }
+
+        // Buscar en nuestra colección local
+        let passes = JSON.parse(SafeStorage.getItem('savedPasses') || '[]');
+        const index = passes.findIndex(p => p.ticketNumber === ticketId);
+
+        if (index === -1) {
+            showToast("❓ Este pase no te pertenece");
+            return;
+        }
+
+        if (passes[index].status === 'used') {
+            playClickSound();
+            alert("⚠️ ¡AVISO CRÍTICO!\n\nEste pase YA HA SIDO CANJEADO anteriormente.\n\nFecha de canje registrada en el sistema.");
+            return;
+        }
+
+        // Validar con éxito
+        passes[index].status = 'used';
+        passes[index].usedAt = new Date().toISOString();
+        SafeStorage.setItem('savedPasses', JSON.stringify(passes));
+
+        playSuccessSound();
+        alert(`🎉 ¡ÉXITO! PASE VALIDADO\n\nTicket: #${ticketId}\nEl favor ha sido activado correctamente.`);
+
+        if (window.location.pathname.includes('coleccion.html')) renderSavedList();
+
+    } catch (e) {
+        showToast("🚫 QR Inválido");
+    }
+}
+
+// --- CORE ACTIONS ---
+function savePass(notify = true) {
+    if (!currentPassData) return;
+    let s = JSON.parse(SafeStorage.getItem('savedPasses') || '[]');
+    if (s.some(p => p.ticketNumber === currentPassData.ticketNumber)) return;
+    s.unshift({ ...currentPassData, savedAt: new Date().toISOString(), localId: Date.now() });
+    SafeStorage.setItem('savedPasses', JSON.stringify(s));
+    if (notify) showToast('💾 ¡Pase guardado!');
 }
 
 let isProcessingImg = false;
-async function sharePass() {
+async function captureAndAction(mode) {
     const card = document.getElementById('finalPassCardEl');
     if (!card || isProcessingImg) return;
-
     isProcessingImg = true;
-    showToast('📸 Preparando pase para compartir...');
-
+    showToast(mode === 'share' ? '📸 Preparando...' : '📸 Descargando...');
     try {
-        const canvas = await html2canvas(card, {
-            backgroundColor: null,
-            scale: 2.5,
-            useCORS: true,
-            logging: false
-        });
-
-        const isCapacitor = window.Capacitor && window.Capacitor.isNativePlatform();
-
-        if (isCapacitor) {
-            const { Share, Filesystem } = window.Capacitor.Plugins;
-            const base64Data = canvas.toDataURL('image/jpeg', 0.9);
-            const base64String = base64Data.split(',')[1];
-            const fileName = `pase-familiar-${Date.now()}.jpg`;
-
-            // 1. Guardar temporalmente en el caché nativo
-            const writeResult = await Filesystem.writeFile({
-                path: fileName,
-                data: base64String,
-                directory: 'CACHE'
-            });
-
-            // 2. Compartir usando el diálogo nativo de Android
-            await Share.share({
-                title: '¡Mira mi Pase Familiar Oficial!',
-                text: `He generado el pase: ${currentPassData.title}`,
-                url: writeResult.uri,
-                dialogTitle: 'Compartir Pase Familiar'
-            });
-            isProcessingImg = false;
-        } else {
-            // Web estándar
-            canvas.toBlob(async (blob) => {
-                const file = new File([blob], 'pase-familiar.jpg', { type: 'image/jpeg' });
-                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share({
-                        files: [file],
-                        title: '¡Mira mi Pase Familiar Oficial!',
-                        text: `He generado el pase: ${currentPassData.title}`
-                    });
-                } else {
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `pase-familiar-${currentPassData.name.toLowerCase().replace(/\s/g, '-')}.jpg`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                    showToast('✅ Descargado en tu galería (Compartido no compatible)');
-                }
-                isProcessingImg = false;
-            }, 'image/jpeg', 0.9);
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'position:fixed; left:-5000px; top:0; padding:100px; background-color:#fdf9ee; display:inline-block; width:540px;';
+        const clone = card.cloneNode(true);
+        clone.style.display = 'flex'; clone.style.boxShadow = 'none'; clone.style.transform = 'none'; clone.style.width = '340px';
+        clone.style.margin = '0 auto';
+        clone.style.overflow = 'visible';
+        const originalCanvas = card.querySelector('canvas');
+        const cloneCanvas = clone.querySelector('canvas');
+        if (originalCanvas && cloneCanvas) {
+            cloneCanvas.width = originalCanvas.width; cloneCanvas.height = originalCanvas.height;
+            cloneCanvas.getContext('2d').drawImage(originalCanvas, 0, 0);
         }
-    } catch (e) {
-        console.error(e);
-        showToast('❌ Error al procesar imagen');
-        isProcessingImg = false;
-    }
-}
-
-async function downloadPass() {
-    const card = document.getElementById('finalPassCardEl');
-    if (!card || isProcessingImg) return;
-
-    isProcessingImg = true;
-    showToast('📸 Renderizando captura del ticket...');
-
-    try {
-        const canvas = await html2canvas(card, {
-            backgroundColor: null,
+        wrap.appendChild(clone); document.body.appendChild(wrap);
+        await new Promise(r => setTimeout(r, 400));
+        const canv = await html2canvas(wrap, {
+            backgroundColor: '#fdf9ee',
             scale: 3,
             useCORS: true,
-            logging: false
+            logging: false,
+            allowTaint: true
         });
-
-        const isCapacitor = window.Capacitor && window.Capacitor.isNativePlatform();
-
-        if (isCapacitor) {
-            const { Filesystem } = window.Capacitor.Plugins;
-            const base64Data = canvas.toDataURL('image/jpeg', 0.9);
-            const base64String = base64Data.split(',')[1];
-            const fileName = `PaseFamiliar_${Date.now()}.jpg`;
-
-            try {
-                // Verificar permisos antes de escribir en almacenamiento público
-                const status = await Filesystem.checkPermissions();
-                if (status.publicStorage !== 'granted') {
-                    await Filesystem.requestPermissions();
-                }
-
-                // Guardar en la carpeta pública "Download"
-                await Filesystem.writeFile({
-                    path: 'Download/' + fileName,
-                    data: base64String,
-                    directory: 'EXTERNAL_STORAGE'
-                });
-                showToast(`✅ Guardado en Descargas / ${fileName}`);
-            } catch (err) {
-                // Caer de espaldas a DOCUMENTS si falla
-                await Filesystem.writeFile({
-                    path: fileName,
-                    data: base64String,
-                    directory: 'DOCUMENTS'
-                });
-                showToast(`✅ Guardado en Documentos / ${fileName}`);
+        document.body.removeChild(wrap);
+        const data = canv.toDataURL('image/jpeg', 0.9);
+        if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+            const { Share, Filesystem } = window.Capacitor.Plugins;
+            if (mode === 'share') {
+                const res = await Filesystem.writeFile({ path: 'vibepass-' + Date.now() + '.jpg', data: data.split(',')[1], directory: 'CACHE' });
+                await Share.share({ title: '¡Mira mi VibePass!', url: res.uri });
+            } else {
+                await Filesystem.writeFile({ path: 'Download/VibePass_' + Date.now() + '.jpg', data: data.split(',')[1], directory: 'EXTERNAL_STORAGE' });
+                showToast('✅ Guardado');
             }
-            isProcessingImg = false;
         } else {
-            // Web estándar
-            const link = document.createElement('a');
-            link.download = `pase-familiar-${currentPassData.name.toLowerCase().replace(/\s/g, '-')}.jpg`;
-            link.href = canvas.toDataURL('image/jpeg', 0.9);
-            link.click();
-            showToast('✅ Pase guardado en descargas');
-            isProcessingImg = false;
+            const l = document.createElement('a'); l.download = 'vibepass.jpg'; l.href = data; l.click();
         }
-    } catch (e) {
-        console.error(e);
-        showToast('❌ Fallo al descargar imagen');
-        isProcessingImg = false;
-    }
+    } catch (e) { logError(mode, e); showToast('❌ Error'); } finally { isProcessingImg = false; }
 }
 
-// ===== BIBLIOTECA (HISTORIAL GUARDADOS) =====
+function sharePass() { captureAndAction('share'); }
+function downloadPass() { captureAndAction('download'); }
+
+async function shareAsSticker() {
+    if (isProcessingImg || !currentPassData) return; isProcessingImg = true; showToast('✨ Creando...');
+    const s = document.createElement('div');
+    s.style.cssText = 'position:fixed; left:-9999px; top:-9999px; width:512px; height:512px; background:white; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; border-radius:80px; border:12px solid #97472a; text-align:center;';
+    s.innerHTML = '<div style="font-size:140px; margin-bottom:20px;">' + currentPassData.emoji + '</div><div style="font-size:42px; font-weight:800; color:#97472a; text-transform:uppercase; font-family:sans-serif;">' + currentPassData.title + '</div>';
+    document.body.appendChild(s);
+    try {
+        const canv = await html2canvas(s, { backgroundColor: null, width: 512, height: 512, scale: 1 });
+        const data = canv.toDataURL('image/webp', 0.8);
+        if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+            const { Share, Filesystem } = window.Capacitor.Plugins;
+            const res = await Filesystem.writeFile({ path: 'sticker-' + Date.now() + '.webp', data: data.split(',')[1], directory: 'CACHE' });
+            await Share.share({ title: 'Mi Sticker', url: res.uri });
+        }
+    } catch (e) { logError('sticker', e); } finally { isProcessingImg = false; if(s.parentNode) document.body.removeChild(s); }
+}
+
 function renderSavedList() {
-    const container = document.getElementById('savedContainer');
-    if (!container) return;
-    const saved = JSON.parse(SafeStorage.getItem('savedPasses') || '[]');
-
-    if (saved.length === 0) {
-        container.innerHTML = `
-            <div class="bg-surface-container rounded-2xl p-8 text-center text-on-surface-variant flex flex-col items-center gap-3 border border-outline-variant/30">
-                <span class="material-symbols-outlined text-5xl text-outline">style</span>
-                <div>
-                    <p class="text-sm font-bold text-on-surface">No tienes pases guardados</p>
-                    <p class="text-xs text-on-surface-variant mt-1">Tus pases guardados aparecerán en este historial.</p>
-                </div>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = saved.map(p => `
-        <div onclick="viewSavedPass(${p.localId})" class="bg-surface-container rounded-xl overflow-hidden cursor-pointer flex justify-between items-center p-4 border border-outline-variant/30 hover:border-primary/50 transition-all">
-            <div class="flex items-center gap-3">
-                <span class="text-3xl">${p.emoji}</span>
-                <div class="flex flex-col text-left">
-                    <h4 class="text-sm font-bold text-on-surface leading-tight">Para: ${escapeHtml(p.name)}</h4>
-                    <span class="text-xs text-on-surface-variant mt-0.5 font-medium line-clamp-1">${p.title}</span>
-                    <span class="text-[9px] font-caps tracking-wider text-primary font-bold uppercase mt-1">EMITIDO: ${p.dateStr}</span>
-                </div>
-            </div>
-            <div class="flex items-center gap-1.5" onclick="event.stopPropagation()">
-                <button onclick="shareSavedPass(${p.localId})" class="p-2 text-on-surface-variant hover:text-primary rounded-full hover:bg-surface-container-high active:scale-95 transition-all">
-                    <span class="material-symbols-outlined text-lg">share</span>
-                </button>
-                <button onclick="deleteSavedPass(${p.localId})" class="p-2 text-red-700 hover:text-red-500 rounded-full hover:bg-surface-container-high active:scale-95 transition-all">
-                    <span class="material-symbols-outlined text-lg">delete</span>
-                </button>
-            </div>
-        </div>
-    `).join('');
+    const c = document.getElementById('savedContainer'); if (!c) return;
+    const s = JSON.parse(SafeStorage.getItem('savedPasses') || '[]');
+    if (s.length === 0) { c.innerHTML = '<div class="text-center py-20 opacity-30 flex flex-col items-center"><span class="material-symbols-outlined text-6xl">style</span><p class="font-bold mt-2">No hay pases guardados</p></div>'; return; }
+    c.innerHTML = s.map(p => {
+        const isUsed = p.status === 'used';
+        return '<div onclick="viewSavedPass(' + p.localId + ')" class="bg-white rounded-2xl p-4 mb-3 flex justify-between items-center border border-outline-variant/30 shadow-sm active:scale-[0.98] transition-all ' + (isUsed ? 'opacity-60 grayscale-[0.5]' : '') + '">' +
+            '<div class="flex items-center gap-3">' +
+                '<span class="text-3xl">' + p.emoji + '</span>' +
+                '<div class="flex flex-col text-left">' +
+                    '<span class="text-xs font-bold text-primary uppercase tracking-widest">' + p.vibe + '</span>' +
+                    '<span class="font-bold text-on-surface">Para: ' + p.name + ' ' + (isUsed ? '(CANJEADO)' : '') + '</span>' +
+                '</div>' +
+            '</div>' +
+            '<button onclick="event.stopPropagation(); deleteSavedPass(' + p.localId + ')" class="text-red-500 p-2"><span class="material-symbols-outlined">delete</span></button>' +
+        '</div>';
+    }).join('');
 }
 
-function viewSavedPass(localId) {
-    const saved = JSON.parse(SafeStorage.getItem('savedPasses') || '[]');
-    const pass = saved.find(p => p.localId === localId);
-    if (!pass) return;
-
-    currentPassData = pass;
-    renderFinalPassCard(pass);
-    showScreen('result');
+function viewSavedPass(id) {
+    const s = JSON.parse(SafeStorage.getItem('savedPasses') || '[]');
+    const p = s.find(x => x.localId === id);
+    if (p) { currentPassData = p; renderFinalPassCard(p); showScreen('result'); }
 }
 
-function deleteSavedPass(localId) {
-    playClickSound();
-    let saved = JSON.parse(SafeStorage.getItem('savedPasses') || '[]');
-    saved = saved.filter(p => p.localId !== localId);
-    SafeStorage.setItem('savedPasses', JSON.stringify(saved));
-    renderSavedList();
-    showToast('🗑️ Pase eliminado');
+function deleteSavedPass(id) {
+    if(!confirm("¿Eliminar este pase?")) return;
+    let s = JSON.parse(SafeStorage.getItem('savedPasses') || '[]');
+    s = s.filter(x => x.localId !== id);
+    SafeStorage.setItem('savedPasses', JSON.stringify(s));
+    renderSavedList(); showToast('🗑️ Eliminado');
 }
 
-async function shareSavedPass(localId) {
-    const saved = JSON.parse(SafeStorage.getItem('savedPasses') || '[]');
-    const pass = saved.find(p => p.localId === localId);
-    if (!pass) return;
-
-    currentPassData = pass;
-    await renderFinalPassCard(pass);
-    sharePass();
+// --- INITIALIZATION ---
+let debugTapCount = 0;
+let debugTapTimeout = null;
+function handleDebugTap() {
+    debugTapCount++; clearTimeout(debugTapTimeout);
+    if (debugTapCount >= 5) { debugTapCount = 0; showDebugLogs(); }
+    else { debugTapTimeout = setTimeout(() => { debugTapCount = 0; }, 2000); }
 }
 
-// ===== INICIALIZACIÓN =====
+function forceUpdate() {
+    showToast('🔄 Sincronizando...');
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(regs => { for (let r of regs) r.unregister(); setTimeout(() => location.reload(true), 500); });
+    } else setTimeout(() => location.reload(true), 500);
+}
+
 function initializeApp() {
-    const path = window.location.pathname;
-    let page = path.split("/").pop() || 'index.html';
-    if (page === '') page = 'index.html';
-    
-    let defaultScreen = 'home';
-    if (page === 'ruleta.html') defaultScreen = 'roulette';
-    else if (page === 'coleccion.html') defaultScreen = 'saved';
-    
-    navigationHistory = [defaultScreen];
-    showScreen(defaultScreen, true);
-
+    console.log("VibePass: Inicializando...");
+    initializeAdMob();
     if (typeof renderVibeFilters === 'function') renderVibeFilters();
     if (typeof renderPassesFeed === 'function') renderPassesFeed();
     if (typeof renderSavedList === 'function') renderSavedList();
     if (typeof renderRouletteWheel === 'function') renderRouletteWheel();
     highlightNav();
-}
 
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    initializeApp();
-} else {
-    window.addEventListener('load', initializeApp);
-}
+    const splash = document.getElementById('app-splash');
+    const hasSeenSplash = sessionStorage.getItem('vibe_splash_seen');
+    const isCompleteOnboarding = localStorage.getItem('vibe_onboarding_v182_done');
 
-// ===== REGISTRO DEL SERVICE WORKER (OFFLINE PWA) =====
-function registerSW() {
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js')
-            .then(reg => {
-                console.log('Service Worker registrado correctamente.', reg);
-                
-                // Recargar automáticamente cuando haya una actualización activa
-                reg.onupdatefound = () => {
-                    const installingWorker = reg.installing;
-                    if (installingWorker) {
-                        installingWorker.onstatechange = () => {
-                            if (installingWorker.state === 'installed') {
-                                if (navigator.serviceWorker.controller) {
-                                    console.log('Nueva actualización del Service Worker encontrada. Recargando...');
-                                    showToast('🔄 Nueva versión disponible, actualizando...');
-                                    setTimeout(() => {
-                                        window.location.reload();
-                                    }, 1000);
-                                }
-                            }
-                        };
-                    }
-                };
-            })
-            .catch(err => console.error('Fallo al registrar Service Worker:', err));
+    const p = window.location.pathname.split("/").pop() || 'index.html';
+    const isEntryPage = (p === 'index.html' || p === '');
+
+    if (!isCompleteOnboarding && isEntryPage && typeof showOnboarding === 'function') {
+        showOnboarding();
+    }
+
+    if (splash) {
+        if (hasSeenSplash) {
+            splash.remove();
+            document.body.classList.add('content-ready');
+        } else {
+            setTimeout(() => {
+                splash.classList.add('splash-hidden');
+                document.body.classList.add('content-ready');
+                sessionStorage.setItem('vibe_splash_seen', 'true');
+                setTimeout(() => { splash.remove(); }, 800);
+            }, 1800);
+        }
+    } else {
+        document.body.classList.add('content-ready');
     }
 }
 
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    registerSW();
-} else {
-    window.addEventListener('load', registerSW);
-}
+if (document.readyState === 'complete' || document.readyState === 'interactive') initializeApp();
+else window.addEventListener('load', initializeApp);

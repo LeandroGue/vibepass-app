@@ -7,8 +7,8 @@ android {
         applicationId "com.vibepass.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 7
-        versionName "1.6"
+        versionCode 13
+        versionName "1.9.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -40,7 +40,7 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
-    implementation 'com.google.android.gms:play-services-ads:24.2.0'
+    implementation 'com.google.android.gms:play-services-ads:25.4.0'
 }
 
 apply from: 'capacitor.build.gradle'
@@ -50,6 +50,6 @@ try {
     if (servicesJSON.text) {
         apply plugin: 'com.google.gms.google-services'
     }
-} catch(Exception e) {
+} catch(Exception ignored) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
 }

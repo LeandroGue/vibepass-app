@@ -64,7 +64,7 @@ function updatePreviewExpiry() {
 }
 
 function switchEditorTab(tabName) {
-    playClickSound();
+    if (typeof playClickSound === 'function') playClickSound();
     const tabs = ['text', 'color', 'stickers'];
     tabs.forEach(tab => {
         const tabEl = document.getElementById('editorTab' + tab.charAt(0).toUpperCase() + tab.slice(1));
@@ -118,7 +118,7 @@ function selectNeonTheme(theme) {
 }
 
 function toggleSticker(emoji) {
-    playClickSound();
+    if (typeof playClickSound === 'function') playClickSound();
     const index = currentStickers.indexOf(emoji);
     if (index >= 0) {
         currentStickers.splice(index, 1);
@@ -133,7 +133,7 @@ function toggleSticker(emoji) {
 }
 
 function clearStickers() {
-    playClickSound();
+    if (typeof playClickSound === 'function') playClickSound();
     currentStickers = [];
     updateStickersLayer();
 }
@@ -213,9 +213,12 @@ function generatePass() {
     // Auto-guardar silenciosamente al generar
     savePass(false);
 
+    // Call AdMob
+    if (typeof showInterstitialAd === 'function') showInterstitialAd();
+
     renderFinalPassCard(currentPassData);
     showScreen('result');
-    playSuccessSound();
+    if (typeof playSuccessSound === 'function') playSuccessSound();
 }
 
 async function renderFinalPassCard(data) {
@@ -243,10 +246,13 @@ async function renderFinalPassCard(data) {
     }
 
     const goldBgClass = isGold ? 'bg-gradient-to-b from-white to-[#ffdbcf] border-primary gold-hologram' : 'bg-surface-container-lowest border-outline-variant';
+    const isUsed = data.status === 'used';
 
     preview.innerHTML = `
-        <div id="finalPassCardEl" class="w-full max-w-[340px] rounded-xl border-2 overflow-hidden flex flex-col relative shadow-[0_24px_48px_-12px_rgba(151,71,42,0.08)] transition-all duration-300 ${goldBgClass}">
+        <div id="finalPassCardEl" class="w-full max-w-[340px] rounded-xl border-2 overflow-hidden flex flex-col relative shadow-[0_24px_48px_-12px_rgba(151,71,42,0.08)] transition-all duration-300 ${goldBgClass} ${isUsed ? 'grayscale-[0.4] opacity-80' : ''}">
             
+            ${isUsed ? '<div class="used-stamp">CANJEADO</div>' : ''}
+
             <!-- Sección Superior del Ticket -->
             <div class="p-5 ticket-cutout pb-8 border-b-2 border-outline-variant/50 relative bg-gradient-to-b from-surface-container-lowest to-surface-container-low">
                 
@@ -260,7 +266,7 @@ async function renderFinalPassCard(data) {
                             { bottom: '28%', right: '12%', rotate: '20deg' }
                         ];
                         const pos = positions[idx % positions.length];
-                        return `<div class="text-3xl filter drop-shadow-md absolute select-none z-30" style="top:${pos.top || 'auto'}; bottom:${pos.bottom || 'auto'}; left:${pos.left || 'auto'}; right:${pos.right || 'auto'}; transform:rotate(${pos.rotate});">${emoji}</div>`;
+                        return '<div class="text-3xl filter drop-shadow-md absolute select-none z-30" style="top:' + (pos.top || 'auto') + '; bottom:' + (pos.bottom || 'auto') + '; left:' + (pos.left || 'auto') + '; right:' + (pos.right || 'auto') + '; transform:rotate(' + pos.rotate + ');">' + emoji + '</div>';
                     }).join('')}
                 </div>
 
@@ -276,7 +282,7 @@ async function renderFinalPassCard(data) {
                 <!-- Título y emoji principal -->
                 <div class="text-center space-y-3 relative z-10">
                     <span class="text-5xl block select-none filter drop-shadow-sm">${data.emoji}</span>
-                    <h2 class="font-headline text-[22px] font-bold text-primary tracking-tight uppercase leading-tight px-2">${data.title}</h2>
+                    <h2 class="font-headline text-[22px] font-bold text-primary tracking-tight uppercase leading-tight px-2 break-words">${data.title}</h2>
                     <p class="font-body-md text-sm text-on-surface-variant max-w-[85%] mx-auto leading-relaxed">
                         ${escapeHtml(data.message)}
                     </p>
@@ -292,40 +298,40 @@ async function renderFinalPassCard(data) {
             </div>
 
             <!-- Sección Inferior del Ticket -->
-            <div class="p-5 bg-surface-container-low flex flex-col gap-4 relative">
+            <div class="p-5 bg-surface-container-low flex flex-col gap-6 relative">
                 <div class="perforated-line"></div>
 
                 <!-- Detalles rápidos (Fecha y Vibe) -->
-                <div class="grid grid-cols-2 gap-2 mt-1 z-10">
-                    <div class="bg-surface-container-lowest p-2.5 rounded-xl border border-outline-variant/30 text-left">
-                        <span class="font-caps text-[8px] text-on-surface-variant block uppercase font-bold tracking-wider mb-0.5">FECHA</span>
-                        <span class="text-xs text-on-surface font-bold">${escapeHtml(data.expiryStr)}</span>
+                <div class="grid grid-cols-2 gap-3 mt-1 z-10">
+                    <div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/30 text-left min-h-[60px] flex flex-col justify-center overflow-visible">
+                        <span class="font-caps text-[8px] text-on-surface-variant block uppercase font-bold tracking-wider mb-1">FECHA</span>
+                        <span class="text-[12px] text-on-surface font-bold leading-relaxed">${escapeHtml(data.expiryStr)}</span>
                     </div>
-                    <div class="bg-surface-container-lowest p-2.5 rounded-xl border border-outline-variant/30 text-left">
-                        <span class="font-caps text-[8px] text-on-surface-variant block uppercase font-bold tracking-wider mb-0.5">VIBE</span>
-                        <span class="text-xs text-on-surface font-bold">${escapeHtml(data.vibe.toUpperCase())}</span>
+                    <div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/30 text-left min-h-[60px] flex flex-col justify-center overflow-visible">
+                        <span class="font-caps text-[8px] text-on-surface-variant block uppercase font-bold tracking-wider mb-1">VIBE</span>
+                        <span class="text-[12px] text-on-surface font-bold leading-relaxed">${escapeHtml(data.vibe.toUpperCase())}</span>
                     </div>
                 </div>
 
                 <!-- Titulares -->
-                <div class="flex justify-between items-center px-2 pt-2 text-left">
-                    <div>
-                        <p class="font-label-sm text-[10px] text-outline uppercase tracking-wider font-bold mb-0.5">Para</p>
-                        <p class="font-headline text-sm font-bold text-on-surface uppercase">${escapeHtml(data.name)}</p>
+                <div class="flex justify-between items-start px-2 pt-4 text-left gap-6 overflow-visible">
+                    <div class="flex-1">
+                        <p class="font-label-sm text-[9px] text-outline uppercase tracking-wider font-bold mb-1.5">Para</p>
+                        <p class="font-headline text-[14px] font-bold text-on-surface uppercase leading-relaxed">${escapeHtml(data.name)}</p>
                     </div>
-                    <div class="text-right">
-                        <p class="font-label-sm text-[10px] text-outline uppercase tracking-wider font-bold mb-0.5">De</p>
-                        <p class="font-headline text-sm font-bold text-on-surface uppercase">${escapeHtml(data.sender)}</p>
+                    <div class="text-right flex-1">
+                        <p class="font-label-sm text-[9px] text-outline uppercase tracking-wider font-bold mb-1.5">De</p>
+                        <p class="font-headline text-[14px] font-bold text-on-surface uppercase leading-relaxed text-right">${escapeHtml(data.sender)}</p>
                     </div>
                 </div>
 
                 <!-- QR Code y Barcode -->
-                <div class="flex flex-col items-center gap-3">
+                <div class="flex flex-col items-center gap-4 pt-4">
                     <div class="bg-white p-2 rounded-xl border border-outline-variant/30 w-28 h-28 flex items-center justify-center relative">
                         <canvas id="finalQrCanvas"></canvas>
                     </div>
                     <div class="flex flex-col items-center">
-                        <span class="font-caps text-[8px] text-outline tracking-[0.25em] font-bold">EMITIDO POR: ${data.issuerSignature}</span>
+                        <span class="font-caps text-[8px] text-outline tracking-[0.25em] font-bold uppercase">EMITIDO POR: ${data.issuerSignature}</span>
                     </div>
                 </div>
             </div>
@@ -334,12 +340,7 @@ async function renderFinalPassCard(data) {
 
     // Generar QR Code real
     try {
-        const qrPayload = JSON.stringify({
-            tkt: data.ticketNumber,
-            titular: data.name,
-            emisor: data.sender,
-            pase: data.title
-        });
+        const qrPayload = 'https://vibepass.app/validate?id=' + data.ticketNumber;
         await QRCode.toCanvas(window.document.getElementById('finalQrCanvas'), qrPayload, {
             width: 96,
             margin: 0,

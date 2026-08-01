@@ -23,11 +23,8 @@ function renderRouletteWheel() {
     const wheel = document.getElementById('rouletteWheel');
     if (!wheel) return;
 
-    // Deshabilitar animación de forma instantánea para el reset
     wheel.style.transition = 'none';
     wheel.style.transform = 'rotate(0deg)';
-    
-    // Forzar reflujo del navegador
     wheel.offsetHeight;
 
     const segments = 8;
@@ -81,9 +78,7 @@ function spinRoulette() {
     try {
         const segments = parseInt(wheel.dataset.segments) || 8;
         const passesRaw = wheel.dataset.passes;
-        if (!passesRaw) {
-            throw new Error("Datos de pases no inicializados");
-        }
+        if (!passesRaw) throw new Error("No pases");
         const passIds = JSON.parse(passesRaw);
         const winnerIndex = Math.floor(Math.random() * segments);
 
@@ -94,52 +89,42 @@ function spinRoulette() {
         const currentRotation = parseFloat(wheel.style.transform.replace(/[^0-9.-]/g, '')) || 0;
         const finalRotation = currentRotation + targetRotation;
 
-        let ticks = 0;
-        const tickTimer = setInterval(() => {
-            if (ticks < 15) {
-                playClickSound();
-                ticks++;
-            } else {
-                clearInterval(tickTimer);
-            }
-        }, 250);
+        if (typeof playClickSound === 'function') {
+             let ticks = 0;
+             const tickTimer = setInterval(() => {
+                 if (ticks < 15) { playClickSound(); ticks++; }
+                 else clearInterval(tickTimer);
+             }, 250);
+        }
 
-        // Aplicar transición fluida para el giro
         wheel.style.transition = 'transform 4s cubic-bezier(0.1, 0.8, 0.1, 1)';
         wheel.style.transform = `rotate(${finalRotation}deg)`;
 
         setTimeout(() => {
-            try {
-                const winner = roulettePassesData.find(p => p.id === passIds[winnerIndex]);
-                if (winner) {
-                    document.getElementById('resultEmoji').textContent = winner.emoji;
-                    document.getElementById('resultText').textContent = winner.title;
-                    rouletteResult = winner;
-                    resultBox.classList.remove('hidden');
-                }
-            } catch (innerErr) {
-                console.error("Error en callback de ruleta:", innerErr);
-            } finally {
-                btn.disabled = false;
-                isSpinning = false;
-                playSuccessSound();
+            const winner = roulettePassesData.find(p => p.id === passIds[winnerIndex]);
+            if (winner) {
+                document.getElementById('resultEmoji').textContent = winner.emoji;
+                document.getElementById('resultText').textContent = winner.title;
+                rouletteResult = winner;
+                resultBox.classList.remove('hidden');
             }
+            btn.disabled = false;
+            isSpinning = false;
+            if (typeof playSuccessSound === 'function') playSuccessSound();
         }, 4100);
 
     } catch (err) {
-        console.error("Fallo al iniciar el giro de la ruleta:", err);
+        console.error(err);
         btn.disabled = false;
         isSpinning = false;
-        showToast("❌ Error al girar la ruleta");
+        showToast("❌ Error al girar");
     }
 }
 
 function useRouletteResult() {
     if (rouletteResult) {
-        // Encontrar o crear un template compatible de passesData
         let template = passesData.find(p => p.emoji === rouletteResult.emoji && p.title === rouletteResult.title);
         if (!template) {
-            // Template fallback
             template = {
                 id: rouletteResult.id,
                 category: 'casa',
